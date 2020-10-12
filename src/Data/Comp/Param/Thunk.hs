@@ -71,7 +71,7 @@ whnf' =  liftM (either Var inject) . whnf
 -- 'whnf' and then projects the top-level signature to the desired
 -- subsignature. Failure to do the projection is signalled as a
 -- failure in the monad.
-whnfPr :: (Monad m, g :<: f) => TrmT m f a -> m (g a (TrmT m f a))
+whnfPr :: (MonadFail m, g :<: f) => TrmT m f a -> m (g a (TrmT m f a))
 whnfPr t = do res <- whnf t
               case res of
                 Left _  -> fail "cannot project variable"
@@ -98,19 +98,19 @@ nfTPr t = termM $ nfPr $ unTerm t
 -- | This function evaluates all thunks while simultaneously
 -- projecting the term to a smaller signature. Failure to do the
 -- projection is signalled as a failure in the monad as in 'whnfPr'.
-nfPr :: (Monad m, Ditraversable g, g :<: f) => TrmT m f a -> m (Trm g a)
+nfPr :: (MonadFail m, Ditraversable g, g :<: f) => TrmT m f a -> m (Trm g a)
 nfPr = liftM In . dimapM nfPr <=< whnfPr
 
 
-evalStrict :: (Ditraversable g, Monad m, g :<: f) => 
+evalStrict :: (Ditraversable g, Monad m, g :<: f) =>
               (g (TrmT m f a) (f a (TrmT m f a)) -> TrmT m f a)
            -> g (TrmT m f a) (TrmT m f a) -> TrmT m f a
-evalStrict cont t = thunk $ do 
+evalStrict cont t = thunk $ do
                       t' <- dimapM (liftM (either (const Nothing) Just) . whnf) t
                       case disequence t' of
                         Nothing -> return $ inject' t
                         Just s -> return $ cont s
-                      
+
 
 -- | This type represents algebras which have terms with thunks as
 -- carrier.
