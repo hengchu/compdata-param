@@ -92,7 +92,7 @@ nf = either (return . Var) (liftM In . dimapM nf) <=< whnf
 -- | This function evaluates all thunks while simultaneously
 -- projecting the term to a smaller signature. Failure to do the
 -- projection is signalled as a failure in the monad as in 'whnfPr'.
-nfTPr :: (ParamFunctor m, Monad m, Ditraversable g, g :<: f) => TermT m f -> m (Term g)
+nfTPr :: (ParamFunctor m, MonadFail m, Ditraversable g, g :<: f) => TermT m f -> m (Term g)
 nfTPr t = termM $ nfPr $ unTerm t
 
 -- | This function evaluates all thunks while simultaneously
